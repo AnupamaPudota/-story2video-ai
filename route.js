@@ -1,33 +1,63 @@
-import { NextResponse } from "next/server";
+import RunwayML, { TaskFailedError } from "@runwayml/sdk";
+
+const client = new RunwayML();
 
 export async function POST(request) {
-  const { prompt } = await request.json();
+  try {
+    const body = await request.json();
 
-  if (!prompt || !prompt.trim()) {
-    return NextResponse.json({ error: "Prompt is required." }, { status: 400 });
-  }
+    const story = body.story || body.prompt || "";
 
-  /*
-    This starter is intentionally provider-neutral.
-    To make real AI videos, connect a video-generation provider here
-    and store its API key in Vercel Environment Variables.
+    if (!story.trim()) {
+      return Response.json(
+        {
+          error: "Please enter a story.",
+          received: body,
+        },
+        { status: 400 }
+      );
+    }
 
-    Example environment variable:
-      VIDEO_API_KEY=your_key_here
+    const prompt = `
+Create a colorful 3D cartoon children's video scene based on this story:
 
-    Never put an API key directly in this file or in the browser.
-  */
+${story}
 
-  if (!process.env.VIDEO_API_KEY) {
-    return NextResponse.json({
-      message:
-        "The app is working, but a video-generation API key has not been connected yet. Add VIDEO_API_KEY in Vercel Environment Variables and connect your chosen video provider in this route.",
-      receivedPrompt: prompt
+Style: cute children's cartoon, colorful, friendly characters,
+cinematic animation, bright lighting, family friendly.
+`;
+
+    const task = await client.imageToVideo
+      .create({
+        model: "gen4.5",
+        promptText: prompt,
+        ratio: "1280:720",
+        duration: 5,
+      })
+      .waitForTaskOutput();
+
+    return Response.json({
+      success: true,
+      videoUrl: task.output?.[0] || "",
     });
-  }
+  } catch (error) {
+    console.error("VIDEO GENERATION ERROR:", error);
 
-  return NextResponse.json({
-    message: "API key detected. Connect your provider's video-generation request in app/api/generate/route.js.",
-    receivedPrompt: prompt
-  });
+    if (error instanceof TaskFailedError) {
+      return Response.json(
+        {
+          error: "Runway video generation failed.",
+          details: error.taskDetails,
+        },
+        { status: 500 }
+      );
+    }
+
+    return Response.json(
+      {
+        error: error.message || "Something went wrong.",
+      },
+      { status: 500 }
+    );
+  }
 }
