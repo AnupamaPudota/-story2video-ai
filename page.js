@@ -12,81 +12,116 @@ export default function Home() {
       setStatus("Please enter a story or video prompt.");
       return;
     }
+
     setStatus("Preparing your video request...");
     setVideoUrl("");
+
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt })
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ story: prompt }),
       });
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Generation failed");
-      if (data.videoUrl) {
-        setVideoUrl(data.videoUrl);
-        setStatus("Video ready!");
-      } else {
-        setStatus(data.message || "Your request was accepted. Connect a video-generation provider to create the video.");
+
+      if (!res.ok) {
+        throw new Error(data.error || "Generation failed.");
       }
-    } catch (e) {
-      setStatus(e.message);
+
+      setStatus("Story received successfully!");
+    } catch (error) {
+      setStatus(error.message || "Something went wrong.");
     }
   }
 
   return (
-    <main style={{ minHeight: "100vh", display: "flex", justifyContent: "center", padding: "30px 16px" }}>
-      <div style={{ width: "100%", maxWidth: 760 }}>
-        <div style={{ textAlign: "center", marginTop: 35 }}>
-          <div style={{ fontSize: 48 }}>🎬</div>
-          <h1 style={{ fontSize: 42, margin: "10px 0" }}>Story2Video AI</h1>
-          <p style={{ color: "#aaa", fontSize: 17 }}>
-            Enter a prompt and turn your idea into a video.
-          </p>
-        </div>
+    <main
+      style={{
+        minHeight: "100vh",
+        padding: "40px 20px",
+        fontFamily: "Arial, sans-serif",
+        background: "#f5f7fb",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: "800px",
+          margin: "0 auto",
+          background: "white",
+          padding: "35px",
+          borderRadius: "20px",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+        }}
+      >
+        <h1 style={{ fontSize: "36px", marginBottom: "10px" }}>
+          🎬 Story to Video AI
+        </h1>
 
-        <section style={{ marginTop: 35, background: "#111", border: "1px solid #2b2b2b", borderRadius: 22, padding: 20 }}>
-          <label style={{ display: "block", marginBottom: 10, fontWeight: 700 }}>Your prompt</label>
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Example: A cute cartoon rabbit helps a lost little fox find its family in a magical forest. Bright 3D animation, warm colors, cinematic camera movement."
-            rows={8}
+        <p style={{ color: "#666", marginBottom: "25px" }}>
+          Turn your children's moral story into a cartoon video.
+        </p>
+
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder="Write your story here..."
+          rows={10}
+          style={{
+            width: "100%",
+            padding: "15px",
+            fontSize: "16px",
+            borderRadius: "12px",
+            border: "1px solid #ccc",
+            resize: "vertical",
+            boxSizing: "border-box",
+          }}
+        />
+
+        <button
+          onClick={generateVideo}
+          style={{
+            marginTop: "20px",
+            width: "100%",
+            padding: "15px",
+            fontSize: "18px",
+            fontWeight: "bold",
+            border: "none",
+            borderRadius: "12px",
+            cursor: "pointer",
+            background: "#111827",
+            color: "white",
+          }}
+        >
+          🎥 Generate Cartoon Video
+        </button>
+
+        {status && (
+          <p
             style={{
-              width: "100%", boxSizing: "border-box", resize: "vertical",
-              background: "#080808", color: "#fff", border: "1px solid #333",
-              borderRadius: 15, padding: 16, fontSize: 16, outline: "none"
-            }}
-          />
-          <button
-            onClick={generateVideo}
-            style={{
-              width: "100%", marginTop: 15, padding: 17, border: 0,
-              borderRadius: 15, background: "#fff", color: "#000",
-              fontSize: 17, fontWeight: 700
+              marginTop: "20px",
+              padding: "12px",
+              background: "#f0f4ff",
+              borderRadius: "10px",
             }}
           >
-            ✨ Generate Video
-          </button>
+            {status}
+          </p>
+        )}
 
-          {status && (
-            <div style={{ marginTop: 18, padding: 14, borderRadius: 12, background: "#1a1a1a", color: "#ddd" }}>
-              {status}
-            </div>
-          )}
-
-          {videoUrl && (
-            <video
-              src={videoUrl}
-              controls
-              playsInline
-              style={{ width: "100%", marginTop: 20, borderRadius: 15 }}
-            />
-          )}
-        </section>
-
-        <p style={{ textAlign: "center", color: "#777", fontSize: 13, marginTop: 22 }}>
-          Mobile-friendly • Works in Safari and Chrome
-        </p>
+        {videoUrl && (
+          <video
+            controls
+            src={videoUrl}
+            style={{
+              width: "100%",
+              marginTop: "20px",
+              borderRadius: "12px",
+            }}
+          />
+        )}
       </div>
     </main>
   );
